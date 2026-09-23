@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - منصة مدارس الأحد</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>body { font-family: 'Cairo', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-100">
+        <h1 id="auth-title" class="text-2xl font-bold text-center mb-6 text-indigo-600">تسجيل الدخول - مدارس الأحد</h1>
+        <div class="space-y-4">
+            <input type="email" id="email" placeholder="البريد الإلكتروني" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+            <input type="password" id="password" placeholder="كلمة المرور" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+            
+            <div id="register-fields" class="hidden space-y-4">
+                <input type="text" id="full-name" placeholder="الاسم الثلاثي" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                <select id="role-select" class="w-full p-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <option value="student">مخدوم (طالب)</option>
+                    <option value="servant">خادم</option>
+                </select>
+            </div>
+
+            <button onclick="handleAuth()" id="auth-btn" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold hover:bg-indigo-700 transition">دخول</button>
+            <p class="text-center text-sm text-slate-500 cursor-pointer pt-2" onclick="toggleAuthMode()" id="toggle-mode-text">ليس لديك حساب؟ سجل الآن</p>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let isSignUp = false;
+
+        function toggleAuthMode() {
+            isSignUp = !isSignUp;
+            document.getElementById('auth-title').innerText = isSignUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول - مدارس الأحد';
+            document.getElementById('auth-btn').innerText = isSignUp ? 'تسجيل' : 'دخول';
+            document.getElementById('register-fields').classList.toggle('hidden');
+            document.getElementById('toggle-mode-text').innerText = isSignUp ? 'لديك حساب بالفعل؟ سجل دخولك' : 'ليس لديك حساب؟ سجل الآن';
+        }
+
+        async function handleAuth() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) return alert('الرجاء إدخال البريد الإلكتروني وكلمة المرور');
+
+            if (isSignUp) {
+                const fullName = document.getElementById('full-name').value;
+                const role = document.getElementById('role-select').value;
+                if (!fullName) return alert('الرجاء إدخال الاسم الثلاثي');
+
+                const { data, error } = await _supabase.auth.signUp({ email, password });
+                if (error) return alert(error.message);
+                
+                if (data.user) {
+                    await _supabase.from('profiles').insert([{ id: data.user.id, full_name: fullName, role: role, points: 10 }]);
+                    alert('تم التسجيل بنجاح! يمكنك الدخول الآن.');
+                    toggleAuthMode();
+                }
+            } else {
+                const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+                if (error) return alert(error.message);
+                
+                window.location.href = 'dashboard.html';
+            }
+        }
+    </script>
+</body>
+</html>
